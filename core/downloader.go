@@ -20,7 +20,7 @@ type Downloader struct {
 
 func (d *Downloader) Execute() {
 	fileDetails := d.File.GetFileDetails()
-	numberOfChunks := d.calculateConcurrentWorker()
+	numberOfChunks := d.calculateConcurrentWorker(fileDetails.Size)
 
 	wg := sync.WaitGroup{}
 	chunks := make([]chan []byte, numberOfChunks)
@@ -35,7 +35,6 @@ func (d *Downloader) Execute() {
 			continue
 		}
 
-		// extract this to a function
 		counter := int(i % fileDetails.Urls.GetSize())
 		fileUrl := fileDetails.Urls.GetUrls()[counter]
 		parsedURL, err := url.Parse(fileUrl)
@@ -106,9 +105,11 @@ func (d *Downloader) downloadWorker(fileUrl string, startByte int64, endByte int
 	*chunk <- data
 }
 
-func (d *Downloader) calculateConcurrentWorker() int64 {
+func (d *Downloader) calculateConcurrentWorker(fileSize int64) int64 {
 	if d.NumberOfChunks != 0 {
 		return d.NumberOfChunks
+	} else if fileSize < d.ChunkSize {
+		return 1
 	}
 
 	return d.File.Size / d.ChunkSize
