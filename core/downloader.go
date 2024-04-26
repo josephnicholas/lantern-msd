@@ -25,10 +25,10 @@ func (d *Downloader) Execute() {
 	wg := sync.WaitGroup{}
 	chunks := make([]chan []byte, numberOfChunks)
 	pb := mpb.New(mpb.WithWaitGroup(&wg))
-	bars := make([]*mpb.Bar, numberOfChunks)
 
 	for i := int64(0); i < numberOfChunks; i++ {
 		chunks[i] = make(chan []byte)
+		bars := make([]*mpb.Bar, numberOfChunks)
 
 		startByte, endByte, currentChunkSize := d.calculateChunk(i, numberOfChunks, fileDetails)
 		if currentChunkSize <= 0 {
@@ -56,7 +56,7 @@ func (d *Downloader) Execute() {
 		)
 
 		wg.Add(1)
-		go d.downloadWorker(fileUrl, startByte, endByte, &wg, bars[i], &chunks[i])
+		go d.DownloadWorker(fileUrl, startByte, endByte, &wg, bars[i], &chunks[i])
 	}
 
 	go func() {
@@ -81,28 +81,37 @@ func (d *Downloader) calculateChunk(i int64, numberOfChunks int64, fileDetails *
 	return startByte, endByte, currentChunkSize
 }
 
-func (d *Downloader) downloadWorker(fileUrl string, startByte int64, endByte int64, wg *sync.WaitGroup, bar *mpb.Bar, chunk *chan []byte) {
+func (d *Downloader) DownloadWorker(fileUrl string, startByte int64, endByte int64, wg *sync.WaitGroup, bar *mpb.Bar, chunk *chan []byte) {
 	defer wg.Done()
-	req, err := http.NewRequest("GET", fileUrl, nil)
-	if err != nil {
-		log.Fatalf("Failed to create request: %v", err)
+
+	maxRetry := 3
+	for i := 0; i < maxRetry; i++ {
+		req, err := http.NewRequest("GET", fileUrl, nil)
+		if err != nil {
+			log.Fatalf("Failed to create request: %v", err)
+		}
+
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-%d", startByte, endByte))
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			log.Fatalf("Failed to do response: %v", err)
+		}
+		defer resp.Body.Close()
+
+		reader := resp.Body
+		if bar != nil {
+			reader = bar.ProxyReader(resp.Body)
+		}
+
+		data, err := io.ReadAll(reader)
+		if err != nil {
+			log.Printf("Failed to read response body: %v", err)
+			continue
+		}
+
+		*chunk <- data
+		return
 	}
-
-	req.Header.Set("Range", fmt.Sprintf("bytes=%d-%d", startByte, endByte))
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Fatalf("Failed to do response: %v", err)
-	}
-	defer resp.Body.Close()
-
-	reader := bar.ProxyReader(resp.Body)
-
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		log.Fatalf("Failed to read response body: %v", err)
-	}
-
-	*chunk <- data
 }
 
 func (d *Downloader) calculateConcurrentWorker(fileSize int64) int64 {

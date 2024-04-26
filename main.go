@@ -45,7 +45,10 @@ func main() {
 			}
 
 			urls := core.NewUrlCollector(context.StringSlice("url")...)
-			f := core.NewFileDetails(*urls)
+			f, err := core.NewFileDetails(*urls)
+			if err != nil {
+				log.Fatalln(err)
+			}
 
 			d := core.Downloader{
 				File:           *f,
