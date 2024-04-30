@@ -26,3 +26,6 @@ jobs:
 
     - name: Test
       run: go test -v lantern-msd/test
+
+    - name: Test Download
+      run: ./lantern-msd --url https://nodejs.org/dist/v21.7.3/node-v21.7.3-linux-x64.tar.xz -k 1048576 -s 23
