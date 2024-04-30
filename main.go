@@ -30,6 +30,12 @@ func main() {
 				Usage:       "Minimum size of a single chunk in bytes. If the size of the file is less than this value, it will be downloaded in a single chunk.",
 				DefaultText: "20MB",
 			},
+			&cli.BoolFlag{
+				Name:        "single-bar",
+				Aliases:     []string{"b"},
+				Usage:       "Enable single progress bar for downloading",
+				DefaultText: "Multiple Progress Bar",
+			},
 		},
 		Action: func(context *cli.Context) error {
 			splitSize := context.Int64("split")
@@ -44,6 +50,8 @@ func main() {
 				minSplitSize = 1024 * 1024 * 20
 			}
 
+			singleProgressBar := context.Bool("single-bar")
+
 			urls := core.NewUrlCollector(context.StringSlice("url")...)
 			f, err := core.NewFileDetails(*urls)
 			if err != nil {
@@ -51,9 +59,10 @@ func main() {
 			}
 
 			d := core.Downloader{
-				File:           *f,
-				NumberOfChunks: splitSize,
-				ChunkSize:      minSplitSize}
+				File:              *f,
+				ChunkSize:         minSplitSize,
+				NumberOfChunks:    splitSize,
+				SingleProgressBar: singleProgressBar}
 
 			d.Execute()
 
