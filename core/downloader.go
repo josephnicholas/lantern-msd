@@ -29,13 +29,8 @@ func (d *Downloader) Execute() {
 	bars := &mpb.Bar{}
 
 	if d.SingleProgressBar {
-		firstUrl, _ := d.File.Urls.GetFirstUrl()
-		parsedUrl, err := url.Parse(firstUrl)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		bars = d.createProgressBar(parsedUrl.Host, pb, fileDetails.Size)
+		host, _ := d.getHostName(-1)
+		bars = d.createProgressBar(host, pb, fileDetails.Size)
 	}
 
 	for i := int64(0); i < numberOfChunks; i++ {
@@ -47,14 +42,9 @@ func (d *Downloader) Execute() {
 		}
 
 		counter := int(i % fileDetails.Urls.GetSize())
-		fileUrl := fileDetails.Urls.GetUrls()[counter]
-		parsedURL, err := url.Parse(fileUrl)
-		if err != nil {
-			log.Fatal(err)
-		}
-
+		host, fileUrl := d.getHostName(counter)
 		if !d.SingleProgressBar {
-			bars = d.createProgressBar(parsedURL.Host, pb, currentChunkSize)
+			bars = d.createProgressBar(host, pb, currentChunkSize)
 		}
 
 		wg.Add(1)
@@ -70,6 +60,20 @@ func (d *Downloader) Execute() {
 
 	const flag = os.O_CREATE | os.O_WRONLY | os.O_APPEND
 	WriteToFile(flag, fileDetails.Name, chunks)
+}
+
+func (d *Downloader) getHostName(counter int) (string, string) {
+	fileUrl, _ := d.File.Urls.GetFirstUrl()
+	if counter >= 0 {
+		fileUrl = d.File.Urls.GetUrls()[counter]
+	}
+
+	parsedUrl, err := url.Parse(fileUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return parsedUrl.Host, fileUrl
 }
 
 func (d *Downloader) calculateChunk(i int64, numberOfChunks int64, fileDetails *FileDetails) (int64, int64, int64) {
