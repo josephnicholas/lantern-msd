@@ -13,9 +13,10 @@ import (
 )
 
 type Downloader struct {
-	File           FileDetails
-	ChunkSize      int64
-	NumberOfChunks int64
+	File              FileDetails
+	ChunkSize         int64
+	NumberOfChunks    int64
+	SingleProgressBar bool
 }
 
 func (d *Downloader) Execute() {
@@ -25,10 +26,15 @@ func (d *Downloader) Execute() {
 	wg := sync.WaitGroup{}
 	chunks := make([]chan []byte, numberOfChunks)
 	pb := mpb.New(mpb.WithWaitGroup(&wg))
+	bars := &mpb.Bar{}
+
+	if d.SingleProgressBar {
+		host, _ := d.getHostName(-1)
+		bars = d.createProgressBar(host, pb, fileDetails.Size)
+	}
 
 	for i := int64(0); i < numberOfChunks; i++ {
 		chunks[i] = make(chan []byte)
-		bars := make([]*mpb.Bar, numberOfChunks)
 
 		startByte, endByte, currentChunkSize := d.calculateChunk(i, numberOfChunks, fileDetails)
 		if currentChunkSize <= 0 {
@@ -36,27 +42,13 @@ func (d *Downloader) Execute() {
 		}
 
 		counter := int(i % fileDetails.Urls.GetSize())
-		fileUrl := fileDetails.Urls.GetUrls()[counter]
-		parsedURL, err := url.Parse(fileUrl)
-		if err != nil {
-			log.Fatal(err)
+		host, fileUrl := d.getHostName(counter)
+		if !d.SingleProgressBar {
+			bars = d.createProgressBar(host, pb, currentChunkSize)
 		}
 
-		barSize := currentChunkSize
-		bars[i] = pb.AddBar(barSize,
-			mpb.PrependDecorators(
-				decor.CountersKibiByte("% .2f / % .2f"),
-				decor.Name(fmt.Sprintf(" [%s]", parsedURL.Host)),
-			),
-			mpb.AppendDecorators(
-				decor.EwmaETA(decor.ET_STYLE_MMSS, float64(d.ChunkSize)/2048),
-				decor.Name(" ] "),
-				decor.AverageSpeed(decor.UnitKiB, "% .2f"),
-			),
-		)
-
 		wg.Add(1)
-		go d.DownloadWorker(fileUrl, startByte, endByte, &wg, bars[i], &chunks[i])
+		go d.DownloadWorker(fileUrl, startByte, endByte, &wg, bars, &chunks[i])
 	}
 
 	go func() {
@@ -70,6 +62,20 @@ func (d *Downloader) Execute() {
 	WriteToFile(flag, fileDetails.Name, chunks)
 }
 
+func (d *Downloader) getHostName(counter int) (string, string) {
+	fileUrl, _ := d.File.Urls.GetFirstUrl()
+	if counter >= 0 {
+		fileUrl = d.File.Urls.GetUrls()[counter]
+	}
+
+	parsedUrl, err := url.Parse(fileUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return parsedUrl.Host, fileUrl
+}
+
 func (d *Downloader) calculateChunk(i int64, numberOfChunks int64, fileDetails *FileDetails) (int64, int64, int64) {
 	startByte := i * d.ChunkSize
 	endByte := startByte + d.ChunkSize - 1
@@ -79,6 +85,22 @@ func (d *Downloader) calculateChunk(i int64, numberOfChunks int64, fileDetails *
 
 	currentChunkSize := endByte - startByte + 1
 	return startByte, endByte, currentChunkSize
+}
+
+func (d *Downloader) createProgressBar(host string, pb *mpb.Progress, barSize int64) *mpb.Bar {
+	bars := pb.AddBar(barSize,
+		mpb.PrependDecorators(
+			decor.CountersKibiByte("% .2f / % .2f"),
+			decor.Name(fmt.Sprintf(" [%s]", host)),
+		),
+		mpb.AppendDecorators(
+			decor.EwmaETA(decor.ET_STYLE_MMSS, float64(d.ChunkSize)/2048),
+			decor.Name(" ] "),
+			decor.AverageSpeed(decor.UnitKiB, "% .2f"),
+		),
+	)
+
+	return bars
 }
 
 func (d *Downloader) DownloadWorker(fileUrl string, startByte int64, endByte int64, wg *sync.WaitGroup, bar *mpb.Bar, chunk *chan []byte) {

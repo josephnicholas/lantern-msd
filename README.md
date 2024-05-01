@@ -98,6 +98,7 @@ go test -v lantern-msd/test
 4. Add re-download support for failed downloads.
 5. Add support for verifying the integrity of downloaded files.
 6. Add support for reading configuration and urls from a file.
+7. Add support for using single progress through CLI flag.
    
 
 
