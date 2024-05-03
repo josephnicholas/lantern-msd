@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/urfave/cli/v2"
-	"lantern-msd/core"
 	"log"
 	"os"
+	"simple-msd/core"
 )
 
 func main() {

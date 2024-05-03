@@ -2,9 +2,9 @@ package test
 
 import (
 	"github.com/nbio/st"
-	"lantern-msd/core"
 	"net/http"
 	"net/http/httptest"
+	"simple-msd/core"
 	"sync"
 	"testing"
 )

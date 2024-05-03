@@ -1,4 +1,4 @@
-module lantern-msd
+module simple-msd
 
 go 1.22
 
