@@ -9,7 +9,7 @@ import (
 
 func main() {
 	app := &cli.App{
-		Name:  "lantern-msd",
+		Name:  "simple-msd",
 		Usage: "A simple multi-source downloader",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{

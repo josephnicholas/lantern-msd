@@ -1,6 +1,6 @@
-# lantern-msd
+# simple-msd
 
-Multi Source File Downloader
+A Simple Multi Source File Downloader
 
 ## Description
 
@@ -17,24 +17,24 @@ This is a simple Go program that downloads files from multiple sources concurren
 
 ## Building
 ```shell
-go build lantern-msd
+go build simple-msd
 ```
 
 ## Testing
 ```shell
-go test -v lantern-msd/test
+go test -v simple-msd/test
 ```
 
 ## Usage
 1. View the help message for usage instructions.
     ```shell
-    ./lantern-msd help
+    ./simple-msd help
 
     NAME:
-       lantern-msd - A simple multi-source downloader
+       simple-msd - A simple multi-source downloader
 
     USAGE:
-       lantern-msd [global options] command [command options]
+       simple-msd [global options] command [command options]
 
     COMMANDS:
        help, h  Shows a list of commands or help for one command
@@ -47,7 +47,7 @@ go test -v lantern-msd/test
     ```
 2. Download a file from multiple resources.
     ```shell
-    ./lantern-msd --url https://mirror.sitsa.com.ar/ubuntu-releases/noble/ubuntu-24.04-desktop-amd64.iso --url https://releases.ubuntu.com/noble/ubuntu-24.04-desktop-amd64.iso 
+    ./simple-msd --url https://mirror.sitsa.com.ar/ubuntu-releases/noble/ubuntu-24.04-desktop-amd64.iso --url https://releases.ubuntu.com/noble/ubuntu-24.04-desktop-amd64.iso 
    
       100.00 MiB / 100.00 MiB [mirror.sitsa.com.ar] [==============================================================================] 00:00 ] 481.02 KiB/s
       100.00 MiB / 100.00 MiB [mirror.sitsa.com.ar] [==============================================================================] 00:00 ] 481.02 KiB/s
@@ -84,11 +84,11 @@ go test -v lantern-msd/test
     ```
 3. To specify the number of chunks to download a file with, use the `--split` flag.
     ```shell
-    ./lantern-msd --url https://mirror.sitsa.com.ar/ubuntu-releases/noble/ubuntu-24.04-desktop-amd64.iso --split 10
+    ./simple-msd --url https://mirror.sitsa.com.ar/ubuntu-releases/noble/ubuntu-24.04-desktop-amd64.iso --split 10
     ```
 4. To specify the minimum size of a single chunk in bytes, use the `--min-split-size` flag.
     ```shell
-    ./lantern-msd --url https://mirror.sitsa.com.ar/ubuntu-releases/noble/ubuntu-24.04-desktop-amd64.iso --min-split-size 10MB
+    ./simple-msd --url https://mirror.sitsa.com.ar/ubuntu-releases/noble/ubuntu-24.04-desktop-amd64.iso --min-split-size 10MB
     ```
    
 ## TODO(Nice to haves)
