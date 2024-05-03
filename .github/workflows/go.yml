@@ -22,10 +22,10 @@ jobs:
         go-version: '1.22'
 
     - name: Build
-      run: go build -v lantern-msd
+      run: go build -v simple-msd
 
     - name: Test
-      run: go test -v lantern-msd/test
+      run: go test -v simple-msd/test
 
     - name: Test Download
-      run: ./lantern-msd --url https://nodejs.org/dist/v21.7.3/node-v21.7.3-linux-x64.tar.xz -k 1048576 -s 23
+      run: ./simple-msd --url https://nodejs.org/dist/v21.7.3/node-v21.7.3-linux-x64.tar.xz -k 1048576 -s 23
